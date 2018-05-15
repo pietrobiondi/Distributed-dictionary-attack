@@ -8,19 +8,20 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 /**
  * Servlet implementation class FirstServlet
  */
-@WebServlet("/FirstServlet")
-public class FirstServlet extends HttpServlet {
+@WebServlet("/LoginServlet")
+public class LoginServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	private final String userID = "prova";
-	private final String password = "provapsw";
+	private final String password = "prova";
     /**
      * @see HttpServlet#HttpServlet()
      */
-    public FirstServlet() {
+    public LoginServlet() {
         super();
         // TODO Auto-generated constructor stub
     }
@@ -44,6 +45,8 @@ public class FirstServlet extends HttpServlet {
 			Cookie loginCookie = new Cookie("user",user);
 			//setting cookie to expiry in 30 mins
 			loginCookie.setMaxAge(30*60);
+			HttpSession session = request.getSession();
+			session.setAttribute("user", user);
 			response.addCookie(loginCookie);
 			response.sendRedirect("LoginSuccess.jsp");
 		}else{
