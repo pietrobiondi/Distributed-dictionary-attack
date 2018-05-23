@@ -1,5 +1,6 @@
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.HashMap;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
@@ -11,13 +12,15 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 /**
- * Servlet implementation class FirstServlet
+ * Servlet implementation class LoginServlet
  */
 @WebServlet("/LoginServlet")
 public class LoginServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	private final String userID = "prova";
 	private final String password = "prova";
+	private HashMap<String, int[]> ACL = new HashMap<String, int[]>();
+
     /**
      * @see HttpServlet#HttpServlet()
      */
@@ -25,6 +28,15 @@ public class LoginServlet extends HttpServlet {
         super();
         // TODO Auto-generated constructor stub
     }
+    private void increaseAttempts(String user){
+    	/*
+    	ACL.put(user, new int[]{123, 1});
+    	int tentativi = ACL.get(user)[1];
+    	int temp = ACL.get(user)[0];
+    	System.out.println(temp);
+    	System.out.println(tentativi);
+    	*/
+	}
 
 	/**
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
@@ -50,6 +62,7 @@ public class LoginServlet extends HttpServlet {
 			response.addCookie(loginCookie);
 			response.sendRedirect("LoginSuccess.jsp");
 		}else{
+			increaseAttempts(user);
 			RequestDispatcher rd = getServletContext().getRequestDispatcher("/login.html");
 			PrintWriter out= response.getWriter();
 			out.println("<font color=red>Either user name or password is wrong.</font>");
@@ -57,5 +70,5 @@ public class LoginServlet extends HttpServlet {
 		}
 		doGet(request, response);
 	}
-
+	
 }
