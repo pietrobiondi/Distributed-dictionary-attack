@@ -23,14 +23,11 @@ public class LoginServlet extends HttpServlet {
 	private final String password = "prova";
 	private final static int NOTBANNED = 0;
 	private final static int BANNED = 1;
+	private final static int RESET_TENTATIVI = 0;
 	private HashMap<String, int[]> ACL = new HashMap<String, int[]>();
 
-	/**
-	 * @see HttpServlet#HttpServlet()
-	 */
 	public LoginServlet() {
 		super();
-		// TODO Auto-generated constructor stub
 	}
 
 	private int getMinutes() {
@@ -39,16 +36,14 @@ public class LoginServlet extends HttpServlet {
 		return Integer.parseInt(formatter.format(date));
 	}
 
-	private boolean checkUserACL(String user) {
-		// controlla la presenza dell utente nell ACL
+	private boolean checkUserACL(String user) { // controlla la presenza dell utente nell ACL
 		if (ACL.get(user) != null)
 			return true;
 		else
 			return false;
 	}
 
-	private int isBanned(String user) {
-		// controlla stato ban utente
+	private int isBanned(String user) { // controlla stato ban utente
 		return ACL.get(user)[2];
 	}
 
@@ -58,50 +53,38 @@ public class LoginServlet extends HttpServlet {
 
 	private int unBan(String user) {
 		if (isBanned(user) == BANNED) {
-			if (diffTime(ACL.get(user)[0]) >= 5) { // ha già aspettato 5 minuti? se si sban.
-				ACL.put(user, new int[] { getMinutes(), 0, NOTBANNED });
-				return 1; //1 = sbannato
+			if (diffTime(ACL.get(user)[0]) >= 3) { // ha già aspettato 3 minuti? se si sban.
+				ACL.put(user, new int[] { getMinutes(), RESET_TENTATIVI, NOTBANNED });
+				return 1; // 1 = sbannato
 			} else
 				return 2; // è bannato ma non è tempo di sbannarlo
-		}else
-			return 3; //non è bannato
+		} else
+			return 3; // non è bannato
 	}
 
 	private void increaseAttempts(String user) {
 		int tentativi = ACL.get(user)[1];
 
 		if (tentativi >= 3)
-			ACL.put(user, new int[] { getMinutes(), 0, BANNED });
+			ACL.put(user, new int[] { getMinutes(), RESET_TENTATIVI, BANNED });
 		else {
 			int temp = ACL.get(user)[0];
 			ACL.put(user, new int[] { temp, ++tentativi, NOTBANNED });
 		}
-
-		System.out.println("Accesso negato.. IncAtt, tentativi =" + tentativi);
 	}
 
 	private void addUserACL(String user) {
 		ACL.put(user, new int[] { getMinutes(), 1, NOTBANNED });
-		System.out.println("Accesso negato primo tentativo");
 	}
 
-	/**
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse
-	 *      response)
-	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
-		// TODO Auto-generated method stub
 		response.getWriter().append("Served at: ").append(request.getContextPath());
 	}
 
-	/**
-	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse
-	 *      response)
-	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
-		// get request parameters for userID and password
+		
 		String user = request.getParameter("user");
 		String pwd = request.getParameter("pwd");
 
@@ -112,17 +95,12 @@ public class LoginServlet extends HttpServlet {
 			rd.include(request, response);
 		} else if (userID.equals(user) && password.equals(pwd)) {
 			Cookie loginCookie = new Cookie("user", user);
-			// setting cookie to expiry in 30 mins
-			loginCookie.setMaxAge(30 * 60);
+			loginCookie.setMaxAge(30 * 60); // setting cookie to expiry in 30 mins
 			HttpSession session = request.getSession();
 			session.setAttribute("user", user);
 			response.addCookie(loginCookie);
 			response.sendRedirect("LoginSuccess.jsp");
 		} else {
-			/*
-			 * caso 1: utente non in ACL e credenziali sbagliate caso 2: utente presente in
-			 * ACL e credenziali sbagliate
-			 */
 			if (checkUserACL(user) == false)
 				addUserACL(user);
 			else
