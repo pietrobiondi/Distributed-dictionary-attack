@@ -56,13 +56,15 @@ public class LoginServlet extends HttpServlet {
 		return (getMinutes() - userTime) % 60;
 	}
 
-	private boolean unBan(String user) {
-		if (isBanned(user) == BANNED && diffTime(ACL.get(user)[0]) >= 3) {
-			// se è bannato e la diff è >=3 allora è da sbannare
-			ACL.put(user, new int[] { getMinutes(), 0, NOTBANNED });
-			return true;
-		} else
-			return false;
+	private int unBan(String user) {
+		if (isBanned(user) == BANNED) {
+			if (diffTime(ACL.get(user)[0]) >= 5) { // ha già aspettato 5 minuti? se si sban.
+				ACL.put(user, new int[] { getMinutes(), 0, NOTBANNED });
+				return 1; //1 = sbannato
+			} else
+				return 2; // è bannato ma non è tempo di sbannarlo
+		}else
+			return 3; //non è bannato
 	}
 
 	private void increaseAttempts(String user) {
@@ -70,8 +72,10 @@ public class LoginServlet extends HttpServlet {
 
 		if (tentativi >= 3)
 			ACL.put(user, new int[] { getMinutes(), 0, BANNED });
-		else
-			ACL.put(user, new int[] { getMinutes(), ++tentativi, NOTBANNED });
+		else {
+			int temp = ACL.get(user)[0];
+			ACL.put(user, new int[] { temp, ++tentativi, NOTBANNED });
+		}
 
 		System.out.println("Accesso negato.. IncAtt, tentativi =" + tentativi);
 	}
@@ -101,7 +105,7 @@ public class LoginServlet extends HttpServlet {
 		String user = request.getParameter("user");
 		String pwd = request.getParameter("pwd");
 
-		if (checkUserACL(user) == true && !(unBan(user) == false)) {
+		if (checkUserACL(user) == true && unBan(user) == 2) {
 			RequestDispatcher rd = getServletContext().getRequestDispatcher("/login.html");
 			PrintWriter out = response.getWriter();
 			out.println("<font color=red>You are banned, wait 3 minutes, and try again.</font>");
@@ -116,8 +120,8 @@ public class LoginServlet extends HttpServlet {
 			response.sendRedirect("LoginSuccess.jsp");
 		} else {
 			/*
-			  caso 1: utente non in ACL e credenziali sbagliate
-			  caso 2: utente presente in ACL e credenziali sbagliate
+			 * caso 1: utente non in ACL e credenziali sbagliate caso 2: utente presente in
+			 * ACL e credenziali sbagliate
 			 */
 			if (checkUserACL(user) == false)
 				addUserACL(user);
