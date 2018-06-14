@@ -21,14 +21,25 @@ public class LoginServlet extends HttpServlet {
 	private final String password = "prova";
 	private final static int NOTBANNED = 0;
 	private final static int BANNED = 1;
-	private final static int RESET_TENTATIVI = 0;
+	private final static int RESET_TENTATIVI = 1;
 	private HashMap<String, Object[]> ACL = new HashMap<String, Object[]>();
 		
 	
 	public LoginServlet() {
 		super();
 	}
-
+	private long getTimeACL(String cookie) {
+		return (long)ACL.get(cookie)[0];
+	}
+	private int getAttemptsACL(String cookie) {
+		return (int)ACL.get(cookie)[1];
+	}
+	private int getStatusBanACL(String cookie) {
+		return (int)ACL.get(cookie)[2];
+	}
+	private String getUserACL(String cookie) {
+		return (String)ACL.get(cookie)[3];
+	}
 	private long getTimeinMills() {
 		return System.currentTimeMillis();
 	}
@@ -41,45 +52,47 @@ public class LoginServlet extends HttpServlet {
 	}
 	
 	private int isBanned(String cookie) { // controlla stato ban cookie
-		return (int)ACL.get(cookie)[2];
+		return getStatusBanACL(cookie);
 	}
 
 	private int diffTime(long userTime) {
-		long currentTime = getTimeinMills();
-		int difftime = (int)(( currentTime - userTime) /1000) %60;		
-		return difftime;
+		return (int)(getTimeinMills() - userTime) / 1000;
 	}
 
 	private int unBan(String cookie) { //vede se è il momento di sbannare
-		String user = (String)ACL.get(cookie)[3];
-		int tentativi = (int)ACL.get(cookie)[1];
+		String user = getUserACL(cookie);
+		int tentativi = getAttemptsACL(cookie);
+		int flag;
 		if (isBanned(cookie) == BANNED) {
-			if( (int)ACL.get(cookie)[1] == 4 && diffTime((long)ACL.get(cookie)[0]) >= 30 ) {
+			if( tentativi == 3 && diffTime( getTimeACL(cookie) ) >= 30 ) {
 				ACL.put(cookie, new Object[] { getTimeinMills(), tentativi, NOTBANNED, user});
-				return 1;
-			}else if((int)ACL.get(cookie)[1] == 7 && diffTime((long)ACL.get(cookie)[0]) >=40 ) {
+				flag = 1;
+			}else if( tentativi == 6 && diffTime( getTimeACL(cookie) ) >=40 ) {
 				ACL.put(cookie, new Object[] { getTimeinMills(), tentativi, NOTBANNED, user});
-				return 1;
-			}else if( (int)ACL.get(cookie)[1] == 10 && diffTime((long)ACL.get(cookie)[0]) >= 50 ) {
+				flag = 1;
+			}else if( tentativi == 10 && diffTime( getTimeACL(cookie) ) >= 50 ) {
 				ACL.put(cookie, new Object[] { getTimeinMills(), RESET_TENTATIVI, NOTBANNED, user});
-				return 1; // sbannato
+				flag = 1; // sbannato
 			}
 			else
-				return 2; // è bannato ma non è tempo di sbannarlo
+				flag = 2; // è bannato ma non è tempo di sbannarlo
 		}else
-			return 3; // non è bannato
-	}
-
-	private void increaseAttempts(String cookie) { // and ban
-		String user = (String)ACL.get(cookie)[3];
-		int tentativi = (int)ACL.get(cookie)[1];
+			flag = 3; // non è bannato
 		
-		if (tentativi == 3 || tentativi == 6 || tentativi == 10)
+		return flag;	
+	}
+	
+	private void Ban(String cookie, int tentativi,String user) {
 			ACL.put(cookie, new Object[] { getTimeinMills(), tentativi, BANNED, user }); //ban
-		else {
-			long temp = (long)ACL.get(cookie)[0];
-			ACL.put(cookie, new Object[] { temp, ++tentativi, NOTBANNED, user });
-		}
+	}
+	
+	private void increaseAttempts(String cookie) {
+		String user = getUserACL(cookie);
+		int tentativi = getAttemptsACL(cookie);
+		long temp = getTimeACL(cookie);
+		ACL.put(cookie, new Object[] { temp, ++tentativi, NOTBANNED, user });
+		if (tentativi == 3 || tentativi == 6 || tentativi == 10)
+			Ban(cookie,tentativi,user);
 	}
 
 	private void addUserACL(String cookie, String user) {
@@ -102,8 +115,6 @@ public class LoginServlet extends HttpServlet {
 		HttpSession session = request.getSession();
 		String sessionID = session.getId(); // cookie
 
-		
-		
 		addUserACL(sessionID,user);
 		if( unBan(sessionID) == 2 ) {
 			RequestDispatcher rd = getServletContext().getRequestDispatcher("/login.html");
@@ -117,6 +128,7 @@ public class LoginServlet extends HttpServlet {
 			response.sendRedirect("LoginSuccess.jsp");
 		}else {
 			increaseAttempts(sessionID);
+			System.out.println("TENTATIVI =" + getAttemptsACL(sessionID));
 			RequestDispatcher rd = getServletContext().getRequestDispatcher("/login.html");
 			PrintWriter out = response.getWriter();
 			out.println("<font color=red>Either user name or password is wrong IncreaseAttempts.</font>");
