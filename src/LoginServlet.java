@@ -10,8 +10,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 /**
  * Servlet implementation class LoginServlet
@@ -24,7 +22,6 @@ public class LoginServlet extends HttpServlet {
 	private final static int NOTBANNED = 0;
 	private final static int BANNED = 1;
 	private final static int RESET_TENTATIVI = 0;
-	//private Object[] userAttributes = new Object[4]; //attributi utente, utilizzati dentro hashmap ACL 0=(int)tempo, 1 =(int)tentativi, 2 =(int)statoban, 3=(String)cookie
 	private HashMap<String, Object[]> ACL = new HashMap<String, Object[]>();
 		
 	
@@ -32,39 +29,39 @@ public class LoginServlet extends HttpServlet {
 		super();
 	}
 
-	private int getMinutes() {
-		SimpleDateFormat formatter = new SimpleDateFormat("mm");
-		Date date = new Date();
-		return Integer.parseInt(formatter.format(date));
+	private long getTimeinMills() {
+		return System.currentTimeMillis();
 	}
-/*
-	private boolean checkUserACL(String user) { // controlla la presenza dell utente nell ACL
-		if (ACL.get(user) != null)
+
+	private boolean checkCookieACL(String cookie) { // controlla la presenza del cookie nell ACL
+		if (ACL.get(cookie) != null)
 			return true;
 		else
 			return false;
 	}
-*/
-	private int isBanned(String user) { // controlla stato ban utente
-		return (int)ACL.get(user)[2];
+	
+	private int isBanned(String cookie) { // controlla stato ban cookie
+		return (int)ACL.get(cookie)[2];
 	}
 
-	private int diffTime(int userTime) {
-		return (getMinutes() - userTime) % 60;
+	private int diffTime(long userTime) {
+		long currentTime = getTimeinMills();
+		int difftime = (int)(( currentTime - userTime) /1000) %60;		
+		return difftime;
 	}
 
-	private int unBan(String user) { //vede se è il momento di sbannare
-		String oldSessionID = (String)ACL.get(user)[3];
-		int tentativi = (int)ACL.get(user)[1];
-		if (isBanned(user) == BANNED) {
-			if( (int)ACL.get(user)[1] == 4 && diffTime((int)ACL.get(user)[0]) >= 1 ) {
-				ACL.put(user, new Object[] { getMinutes(), tentativi, NOTBANNED, oldSessionID});
+	private int unBan(String cookie) { //vede se è il momento di sbannare
+		String user = (String)ACL.get(cookie)[3];
+		int tentativi = (int)ACL.get(cookie)[1];
+		if (isBanned(cookie) == BANNED) {
+			if( (int)ACL.get(cookie)[1] == 4 && diffTime((long)ACL.get(cookie)[0]) >= 30 ) {
+				ACL.put(cookie, new Object[] { getTimeinMills(), tentativi, NOTBANNED, user});
 				return 1;
-			}else if((int)ACL.get(user)[1] == 7 && diffTime((int)ACL.get(user)[0]) >= 2 ) {
-				ACL.put(user, new Object[] { getMinutes(), tentativi, NOTBANNED, oldSessionID});
+			}else if((int)ACL.get(cookie)[1] == 7 && diffTime((long)ACL.get(cookie)[0]) >=40 ) {
+				ACL.put(cookie, new Object[] { getTimeinMills(), tentativi, NOTBANNED, user});
 				return 1;
-			}else if( (int)ACL.get(user)[1] == 10 && diffTime((int)ACL.get(user)[0]) >= 3 ) {
-				ACL.put(user, new Object[] { getMinutes(), RESET_TENTATIVI, NOTBANNED, oldSessionID});
+			}else if( (int)ACL.get(cookie)[1] == 10 && diffTime((long)ACL.get(cookie)[0]) >= 50 ) {
+				ACL.put(cookie, new Object[] { getTimeinMills(), RESET_TENTATIVI, NOTBANNED, user});
 				return 1; // sbannato
 			}
 			else
@@ -73,20 +70,21 @@ public class LoginServlet extends HttpServlet {
 			return 3; // non è bannato
 	}
 
-	private void increaseAttempts(String user) { // and ban
-		String oldSessionID = (String)ACL.get(user)[3];
-		int tentativi = (int)ACL.get(user)[1];
+	private void increaseAttempts(String cookie) { // and ban
+		String user = (String)ACL.get(cookie)[3];
+		int tentativi = (int)ACL.get(cookie)[1];
 		
-		if (tentativi == 4 || tentativi == 7 || tentativi == 10)
-			ACL.put(user, new Object[] { getMinutes(), tentativi, BANNED, oldSessionID }); //ban
+		if (tentativi == 3 || tentativi == 6 || tentativi == 10)
+			ACL.put(cookie, new Object[] { getTimeinMills(), tentativi, BANNED, user }); //ban
 		else {
-			int temp = (int)ACL.get(user)[0];
-			ACL.put(user, new Object[] { temp, ++tentativi, NOTBANNED, oldSessionID });
+			long temp = (long)ACL.get(cookie)[0];
+			ACL.put(cookie, new Object[] { temp, ++tentativi, NOTBANNED, user });
 		}
 	}
 
-	private void addUserACL(String user, String sessionID) {
-		ACL.put(user, new Object[] { getMinutes(), 0, NOTBANNED, sessionID});
+	private void addUserACL(String cookie, String user) {
+		if(!checkCookieACL(cookie))
+			ACL.put(cookie, new Object[] { getTimeinMills(), RESET_TENTATIVI, NOTBANNED, user});
 	}
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -99,27 +97,26 @@ public class LoginServlet extends HttpServlet {
 		
 		String user = request.getParameter("user");
 		String pwd = request.getParameter("pwd");
-		String sessionID ="";
 		Cookie loginCookie = new Cookie("user", user);
 		loginCookie.setMaxAge(30 * 60); // setting cookie to expiry in 30 mins (scadenza)
 		HttpSession session = request.getSession();
+		String sessionID = session.getId(); // cookie
+
 		
-		System.out.println(session.getId());
 		
-		
-		
-		addUserACL(user,sessionID);
-		if( unBan(user) == 2 ) {
+		addUserACL(sessionID,user);
+		if( unBan(sessionID) == 2 ) {
 			RequestDispatcher rd = getServletContext().getRequestDispatcher("/login.html");
 			PrintWriter out = response.getWriter();
-			out.println("<font color=red>You are banned, wait X minutes, and try again.</font>");
+			out.println("<font color=red>You are banned Wait and try later again.</font>");
 			rd.include(request, response);
 		}else if (userID.equals(user) && password.equals(pwd)) {
+			ACL.put(sessionID, new Object[] { getTimeinMills(), RESET_TENTATIVI, NOTBANNED, user});
 			session.setAttribute("user", user);
 			response.addCookie(loginCookie);
 			response.sendRedirect("LoginSuccess.jsp");
 		}else {
-			increaseAttempts(user);
+			increaseAttempts(sessionID);
 			RequestDispatcher rd = getServletContext().getRequestDispatcher("/login.html");
 			PrintWriter out = response.getWriter();
 			out.println("<font color=red>Either user name or password is wrong IncreaseAttempts.</font>");
