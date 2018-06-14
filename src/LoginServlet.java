@@ -24,8 +24,10 @@ public class LoginServlet extends HttpServlet {
 	private final static int NOTBANNED = 0;
 	private final static int BANNED = 1;
 	private final static int RESET_TENTATIVI = 0;
-	private HashMap<String, int[]> ACL = new HashMap<String, int[]>();
-
+	//private Object[] userAttributes = new Object[4]; //attributi utente, utilizzati dentro hashmap ACL 0=(int)tempo, 1 =(int)tentativi, 2 =(int)statoban, 3=(String)cookie
+	private HashMap<String, Object[]> ACL = new HashMap<String, Object[]>();
+		
+	
 	public LoginServlet() {
 		super();
 	}
@@ -35,46 +37,56 @@ public class LoginServlet extends HttpServlet {
 		Date date = new Date();
 		return Integer.parseInt(formatter.format(date));
 	}
-
+/*
 	private boolean checkUserACL(String user) { // controlla la presenza dell utente nell ACL
 		if (ACL.get(user) != null)
 			return true;
 		else
 			return false;
 	}
-
+*/
 	private int isBanned(String user) { // controlla stato ban utente
-		return ACL.get(user)[2];
+		return (int)ACL.get(user)[2];
 	}
 
 	private int diffTime(int userTime) {
 		return (getMinutes() - userTime) % 60;
 	}
 
-	private int unBan(String user) {
+	private int unBan(String user) { //vede se è il momento di sbannare
+		String oldSessionID = (String)ACL.get(user)[3];
+		int tentativi = (int)ACL.get(user)[1];
 		if (isBanned(user) == BANNED) {
-			if (diffTime(ACL.get(user)[0]) >= 3) { // ha già aspettato 3 minuti? se si sban.
-				ACL.put(user, new int[] { getMinutes(), RESET_TENTATIVI, NOTBANNED });
-				return 1; // 1 = sbannato
-			} else
+			if( (int)ACL.get(user)[1] == 4 && diffTime((int)ACL.get(user)[0]) >= 1 ) {
+				ACL.put(user, new Object[] { getMinutes(), tentativi, NOTBANNED, oldSessionID});
+				return 1;
+			}else if((int)ACL.get(user)[1] == 7 && diffTime((int)ACL.get(user)[0]) >= 2 ) {
+				ACL.put(user, new Object[] { getMinutes(), tentativi, NOTBANNED, oldSessionID});
+				return 1;
+			}else if( (int)ACL.get(user)[1] == 10 && diffTime((int)ACL.get(user)[0]) >= 3 ) {
+				ACL.put(user, new Object[] { getMinutes(), RESET_TENTATIVI, NOTBANNED, oldSessionID});
+				return 1; // sbannato
+			}
+			else
 				return 2; // è bannato ma non è tempo di sbannarlo
-		} else
+		}else
 			return 3; // non è bannato
 	}
 
-	private void increaseAttempts(String user) {
-		int tentativi = ACL.get(user)[1];
-
-		if (tentativi >= 3)
-			ACL.put(user, new int[] { getMinutes(), RESET_TENTATIVI, BANNED });
+	private void increaseAttempts(String user) { // and ban
+		String oldSessionID = (String)ACL.get(user)[3];
+		int tentativi = (int)ACL.get(user)[1];
+		
+		if (tentativi == 4 || tentativi == 7 || tentativi == 10)
+			ACL.put(user, new Object[] { getMinutes(), tentativi, BANNED, oldSessionID }); //ban
 		else {
-			int temp = ACL.get(user)[0];
-			ACL.put(user, new int[] { temp, ++tentativi, NOTBANNED });
+			int temp = (int)ACL.get(user)[0];
+			ACL.put(user, new Object[] { temp, ++tentativi, NOTBANNED, oldSessionID });
 		}
 	}
 
-	private void addUserACL(String user) {
-		ACL.put(user, new int[] { getMinutes(), 1, NOTBANNED });
+	private void addUserACL(String user, String sessionID) {
+		ACL.put(user, new Object[] { getMinutes(), 0, NOTBANNED, sessionID});
 	}
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -87,28 +99,30 @@ public class LoginServlet extends HttpServlet {
 		
 		String user = request.getParameter("user");
 		String pwd = request.getParameter("pwd");
-
-		if (checkUserACL(user) == true && unBan(user) == 2) {
+		String sessionID ="";
+		Cookie loginCookie = new Cookie("user", user);
+		loginCookie.setMaxAge(30 * 60); // setting cookie to expiry in 30 mins (scadenza)
+		HttpSession session = request.getSession();
+		
+		System.out.println(session.getId());
+		
+		
+		
+		addUserACL(user,sessionID);
+		if( unBan(user) == 2 ) {
 			RequestDispatcher rd = getServletContext().getRequestDispatcher("/login.html");
 			PrintWriter out = response.getWriter();
-			out.println("<font color=red>You are banned, wait 3 minutes, and try again.</font>");
+			out.println("<font color=red>You are banned, wait X minutes, and try again.</font>");
 			rd.include(request, response);
-		} else if (userID.equals(user) && password.equals(pwd)) {
-			Cookie loginCookie = new Cookie("user", user);
-			loginCookie.setMaxAge(30 * 60); // setting cookie to expiry in 30 mins
-			HttpSession session = request.getSession();
+		}else if (userID.equals(user) && password.equals(pwd)) {
 			session.setAttribute("user", user);
 			response.addCookie(loginCookie);
 			response.sendRedirect("LoginSuccess.jsp");
-		} else {
-			if (checkUserACL(user) == false)
-				addUserACL(user);
-			else
-				increaseAttempts(user);
-
+		}else {
+			increaseAttempts(user);
 			RequestDispatcher rd = getServletContext().getRequestDispatcher("/login.html");
 			PrintWriter out = response.getWriter();
-			out.println("<font color=red>Either user name or password is wrong.</font>");
+			out.println("<font color=red>Either user name or password is wrong IncreaseAttempts.</font>");
 			rd.include(request, response);
 		}
 		doGet(request, response);
