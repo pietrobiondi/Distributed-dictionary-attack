@@ -102,7 +102,7 @@ public class LoginServlet extends HttpServlet {
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
-		response.getWriter().append("Served at: ").append(request.getContextPath());
+		response.getWriter().append("Served at: ").append(request.getContextPath()).append("STATUS: "+response.getStatus());
 	}
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -114,12 +114,14 @@ public class LoginServlet extends HttpServlet {
 		loginCookie.setMaxAge(30 * 60); // setting cookie to expiry in 30 mins (scadenza)
 		HttpSession session = request.getSession();
 		String sessionID = session.getId(); // cookie
+		System.out.println("ID SESSIONE: "+sessionID);
 
 		addUserACL(sessionID,user);
 		if( unBan(sessionID) == 2 ) {
 			RequestDispatcher rd = getServletContext().getRequestDispatcher("/login.html");
 			PrintWriter out = response.getWriter();
 			out.println("<font color=red>You are banned Wait and try later again.</font>");
+			response.setStatus(270); //banned
 			rd.include(request, response);
 		}else if (userID.equals(user) && password.equals(pwd)) {
 			ACL.put(sessionID, new Object[] { getTimeinMills(), RESET_TENTATIVI, NOTBANNED, user});
@@ -132,6 +134,7 @@ public class LoginServlet extends HttpServlet {
 			RequestDispatcher rd = getServletContext().getRequestDispatcher("/login.html");
 			PrintWriter out = response.getWriter();
 			out.println("<font color=red>Either user name or password is wrong IncreaseAttempts.</font>");
+			response.setStatus(271); //hai ancora tentativi
 			rd.include(request, response);
 		}
 		doGet(request, response);
