@@ -1,5 +1,6 @@
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
+import java.io.FileReader;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.CookieHandler;
@@ -25,6 +26,11 @@ public class Client {
 
 	String url = "http://localhost:8080/Distribuiti/login.html";
 	String login = "http://localhost:8080/Distribuiti/LoginServlet";
+	String line = "";
+	List<String> lines = new ArrayList<String>();
+	List<Integer> indexRecived = new ArrayList<Integer>(); //parole ricevute da altri client
+	int index [] = new int[3];
+	int response[] = new int[3];
 
 	Client http = new Client();
 
@@ -33,21 +39,67 @@ public class Client {
 
 	// 1. Send a "GET" request, so that you can extract the form's data.
 	String page = http.GetPageContent(url);
-	String postParams = http.getFormParams(page, "prova", "1");
+	
+	BufferedReader abc = new BufferedReader(new FileReader("dizionario.txt"));
+
+	while((line = abc.readLine()) != null) {
+	    lines.add(line);
+
+	}
+	abc.close();
+	indexRecived.add(5);
+	indexRecived.add(9);
+	indexRecived.add(0);
+	indexRecived.add(33);
+	indexRecived.add(10);
+	indexRecived.add(38);
+	indexRecived.add(8);
+	indexRecived.add(17);
+	indexRecived.add(13);
+	indexRecived.add(20);
+	indexRecived.add(2);
+	
+
+	String[] data = lines.toArray(new String[]{});
+	
+	//scelta indici random da dizionario
+	index[0] = (int)(Math.random() * (data.length));
+	
+	while(indexRecived.contains(index[0])) {
+		
+		index[0] = (int)(Math.random() * (data.length));
+	}
+	
+	index[1] = (int)(Math.random() * (data.length));
+	while(indexRecived.contains(index[1])) {
+		
+		index[1] = (int)(Math.random() * (data.length));
+	}
+	
+	index[2] = (int)(Math.random() * (data.length));
+	while(indexRecived.contains(index[2])) {
+		index[2] = (int)(Math.random() * (data.length));
+	}
+	
+	String postParams[] = new String[3];
+	for(int i=0;i<3;i++) {
+		postParams[i] = http.getFormParams(page, "prova", data[index[i]]);
+	}
+	 
 
 	// 2. Construct above post's content and then send a POST request for
 	// authentication
-	http.sendPost(login, postParams);
-	http.sendPost(login, postParams);
-	http.sendPost(login, postParams);
-	http.sendPost(login, postParams);
-
-	// 3. success then go to gmail.
-	String result = http.GetPageContent(login);
-	System.out.println(result);
+	for(int i=0;i<3;i++) {
+		response[i] = http.sendPost(login, postParams[i]);
+	}
+	
+	//Qui si deve considerare response[] ed agire di conseguenza.
+	
+	//String result = http.GetPageContent(login);
+	//System.out.println(result);
   }
 
-  private void sendPost(String url, String postParams) throws Exception {
+  private int sendPost(String url, String postParams) throws Exception {
 
 	URL obj = new URL(url);
 	conn = (HttpURLConnection) obj.openConnection();
@@ -90,7 +142,8 @@ public class Client {
 	}
 	in.close();
 	// System.out.println(response.toString());
-
+	
+	return responseCode;
   }
 
   private String GetPageContent(String url) throws Exception {
