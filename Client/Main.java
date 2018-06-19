@@ -1,4 +1,3 @@
-
 public class Main {
 
 	public static void main(String[] args) throws Exception {
@@ -6,11 +5,13 @@ public class Main {
 		String url = "http://localhost:8080/Distribuiti/login.html";
 		String login = "http://localhost:8080/Distribuiti/LoginServlet";
 		String dictonary = "dizionario.txt";
+		String exName = "router";
 		
-		Attaccker c1 = new Attaccker(url, login, dictonary);
+		Attaccker c1 = new Attaccker(url, login, dictonary, exName, "Attaccker1");
+		Attaccker c2 = new Attaccker(url, login, dictonary, exName, "Attaccker2");
 		
 		c1.start();
+		c2.start();
 		
 	}
-
 }
