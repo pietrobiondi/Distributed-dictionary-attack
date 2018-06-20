@@ -10,6 +10,8 @@ public class Main {
 		Attaccker c1 = new Attaccker(url, login, dictonary, exName, "Attaccker1");
 		Attaccker c2 = new Attaccker(url, login, dictonary, exName, "Attaccker2");
 		
+		c1.receivedMessage();
+		c2.receivedMessage();
 		c1.start();
 		c2.start();
 		
