@@ -21,7 +21,7 @@ public class LoginServlet extends HttpServlet {
 	private final String password = "prova";
 	private final static int NOTBANNED = 0;
 	private final static int BANNED = 1;
-	private final static int RESET_TENTATIVI = 1;
+	private final static int RESET_TENTATIVI = 0;
 	private HashMap<String, Object[]> ACL = new HashMap<String, Object[]>();
 		
 	
@@ -64,13 +64,13 @@ public class LoginServlet extends HttpServlet {
 		int tentativi = getAttemptsACL(cookie);
 		int flag;
 		if (isBanned(cookie) == BANNED) {
-			if( tentativi == 3 && diffTime( getTimeACL(cookie) ) >= 30 ) {
+			if( tentativi == 3 && diffTime( getTimeACL(cookie) ) >= 20 ) {
 				ACL.put(cookie, new Object[] { getTimeinMills(), tentativi, NOTBANNED, user});
 				flag = 1;
-			}else if( tentativi == 6 && diffTime( getTimeACL(cookie) ) >=40 ) {
+			}else if( tentativi == 7 && diffTime( getTimeACL(cookie) ) >=30 ) {
 				ACL.put(cookie, new Object[] { getTimeinMills(), tentativi, NOTBANNED, user});
 				flag = 1;
-			}else if( tentativi == 10 && diffTime( getTimeACL(cookie) ) >= 50 ) {
+			}else if( tentativi == 11 && diffTime( getTimeACL(cookie) ) >= 40 ) {
 				ACL.put(cookie, new Object[] { getTimeinMills(), RESET_TENTATIVI, NOTBANNED, user});
 				flag = 1; // sbannato
 			}
@@ -91,7 +91,7 @@ public class LoginServlet extends HttpServlet {
 		int tentativi = getAttemptsACL(cookie);
 		long temp = getTimeACL(cookie);
 		ACL.put(cookie, new Object[] { temp, ++tentativi, NOTBANNED, user });
-		if (tentativi == 3 || tentativi == 6 || tentativi == 10)
+		if (tentativi == 3 || tentativi == 7 || tentativi == 11)
 			Ban(cookie,tentativi,user);
 	}
 
