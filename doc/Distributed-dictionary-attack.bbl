@@ -1,10 +1,23 @@
 \begin{thebibliography}{1}
 
-\bibitem{serverstate}
-PANKAJ:
-\newblock {Session Management in Java – HttpServlet, Cookies, URL Rewriting}.
-\newblock
-  \url{https://www.journaldev.com/1907/java-session-management-servlet-httpsession-url-rewriting}
-  (2018)
+\bibitem{aspectj}
+Foundation, E.:
+\newblock {AspectJ}.
+\newblock \url{https://www.eclipse.org/aspectj/} (2018)
+
+\bibitem{eclipse}
+Foundation, E.:
+\newblock {Eclipse (IDE)}.
+\newblock \url{https://www.eclipse.org/} (2018)
+
+\bibitem{rabbitmq}
+Pivotal:
+\newblock {RabbitMQ}.
+\newblock \url{https://www.rabbitmq.com/} (2018)
+
+\bibitem{servlet}
+Wikipedia:
+\newblock {Servlet}.
+\newblock \url{https://it.wikipedia.org/wiki/Servlet} (2018)
 
 \end{thebibliography}
