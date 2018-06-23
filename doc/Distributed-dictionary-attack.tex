@@ -1,0 +1,65 @@
+\documentclass[a4paper,12pt,titlepage,oneside,openany]{book}
+\usepackage[italian]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsfonts,amsthm,graphicx,mathrsfs,braket,float}
+\usepackage[hidelinks]{hyperref}
+\usepackage{bytefield}
+\usepackage{multirow}
+\usepackage{url}
+\setcounter{secnumdepth}{4} 
+\setcounter{tocdepth}{3}
+\linespread{1.6}
+\graphicspath{ {./Images/} }
+
+\begin{document}
+	\clearpage
+	\thispagestyle{empty}
+	\begin{figure}
+		\centering
+		\vspace*{-2cm}	\includegraphics[scale=0.6]{logounict.png}
+		\label{fig:logounict}
+	\end{figure}
+	
+	
+	\centerline{{\LARGE UNIVERSIT\`{A} DEGLI STUDI DI CATANIA}}
+	\centerline{DIPARTIMENTO DI MATEMATICA E INFORMATICA} \centerline{CORSO DI LAUREA MAGISTRALE IN INFORMATICA}
+	\centerline{\rule{16cm}{0.2mm}}\vspace*{2cm}
+	\centerline{\LARGE{Distributed Dictionary Attack}}
+	\centerline{\LARGE{}}
+	\centerline{\rule{1cm}{0.2mm}}\medskip
+	\centerline{RELAZIONE}
+	\centerline{\rule{1cm}{0.2mm}}
+	\vspace*{1.19cm}
+	\begin{minipage}[t]{0.47\textwidth}
+		\raggedright{
+			\makebox[3cm][l]{Studenti}\par
+			\makebox[3cm][l]{Pietro Biondi}\par
+			\makebox[3cm][l]{Giuseppe Parasiliti}\par
+		}\vspace*{0.5cm}
+	\end{minipage}
+	\begin{minipage}[t]{0.47\textwidth}
+		\raggedleft{
+			\makebox[3cm][l]
+			{Professore}\par
+			\makebox[3cm][l]
+			{Emiliano Tramontana}\par} \vspace*{0.5cm}
+	\end{minipage}
+	
+	\centerline{\rule{16cm}{0.2mm}} 
+	\centerline{ANNO ACCADEMICO 2017/2018}
+	\newpage
+	\thispagestyle{empty}
+	\tableofcontents
+	\thispagestyle{empty}
+	\newpage
+\chapter*{Introduzione}
+\addcontentsline{toc}{chapter}{Introduzione}
+\markboth{Introduzione}{Introduzione} 
+1
+\chapter{Titolo2}
+\chapter{Conclusioni}
+Prova sono qui\cite{serverstate}
+
+\bibliographystyle{splncs}
+\bibliography{biblio}
+\end{document}

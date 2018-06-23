@@ -1,0 +1,10 @@
+\begin{thebibliography}{1}
+
+\bibitem{serverstate}
+PANKAJ:
+\newblock {Session Management in Java – HttpServlet, Cookies, URL Rewriting}.
+\newblock
+  \url{https://www.journaldev.com/1907/java-session-management-servlet-httpsession-url-rewriting}
+  (2018)
+
+\end{thebibliography}
