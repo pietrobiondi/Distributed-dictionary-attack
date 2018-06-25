@@ -8,7 +8,9 @@
 \contentsline {chapter}{\numberline {2}Strumenti utilizzati}{5}{chapter.2}
 \contentsline {chapter}{\numberline {3}Sviluppo del server}{6}{chapter.3}
 \contentsline {section}{\numberline {3.1}Sviluppo LoginServlet}{6}{section.3.1}
-\contentsline {chapter}{\numberline {4}Implementazione classe Attacker}{9}{chapter.4}
-\contentsline {section}{\numberline {4.1}Funzione run}{9}{section.4.1}
-\contentsline {section}{\numberline {4.2}Funzione sendMessage}{11}{section.4.2}
-\contentsline {section}{\numberline {4.3}Funzione receivedMessage}{11}{section.4.3}
+\contentsline {section}{\numberline {3.2}Aspect LogServer}{8}{section.3.2}
+\contentsline {chapter}{\numberline {4}Implementazione classe Attacker}{10}{chapter.4}
+\contentsline {section}{\numberline {4.1}Funzione run}{10}{section.4.1}
+\contentsline {section}{\numberline {4.2}Funzione sendMessage}{12}{section.4.2}
+\contentsline {section}{\numberline {4.3}Funzione receivedMessage}{12}{section.4.3}
+\contentsline {section}{\numberline {4.4}Pointcut LogAttacker}{13}{section.4.4}

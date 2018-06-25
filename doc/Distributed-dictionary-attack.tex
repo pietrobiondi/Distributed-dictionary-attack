@@ -60,15 +60,13 @@ Il progetto ha come obbiettivo quello di effettuare un attacco a dizionario in a
 \subsection{Attacco a forza bruta}
 In informatica il metodo "forza bruta" è noto anche come ricerca esaustiva della soluzione. Esso è un algoritmo di risoluzione di un problema dato che consiste nel verificare tutte le soluzioni teoricamente possibili fino a che si trova quella effettivamente corretta. Nell'ambito della sicurezza informatica, questo metodo si utilizza soprattutto per trovare la password di accesso a un sistema. Utilizzando una parola italiana di 8 caratteri come password, la sua robustezza è data dal numero totale di parole italiane di 8 caratteri. È quindi palese l'importanza di utilizzare password molto lunghe.
 \subsection{Attacco a dizionario}
-Un'altra tipologia di attacco per violare la password di un sistema può essere quello di sferrare un attacco a dizionario, che consiste nel provare le password contenute in un determinato dizionario. L'efficacia di un attacco a dizionario è direttamente proporzionale alla dimensione del dizionario stesso, in altre parole più è grande il glossario delle parole più è alta la probabilità di indovinare la password del sistema. L'efficacia di un attacco a dizionario può essere notevolmente ridotta limitando il numero massimo di tentativi di autenticazione che possono essere effettuati sul sistema e bloccando anche i tentativi che superano una certa soglia di esiti negativi. Generalmente, 3 tentativi sono considerati sufficienti per permettere ad un utente legittimo di correggere i propri errori di battitura e accedere correttamente al sistema. Superata questa soglia, per sicurezza è meglio assumere che l'utente sia da considerarsi malintenzionato.
+Un'altra tipologia di attacco per violare la password di un sistema può essere quello di sferrare un attacco a dizionario, che consiste nel provare le password contenute in un determinato dizionario. L'efficacia di un attacco a dizionario è direttamente proporzionale alla dimensione del dizionario stesso, in altre parole più è grande il glossario delle parole più è alta la probabilità di indovinare la password del sistema. L'efficacia di un attacco a dizionario può essere notevolmente ridotta limitando il numero massimo di tentativi di autenticazione che possono essere effettuati sul sistema e bloccando anche i tentativi che superano una certa soglia di esiti negativi. Generalmente, tre tentativi sono considerati sufficienti per permettere ad un utente legittimo di correggere i propri errori di battitura e accedere correttamente al sistema. Superata questa soglia, l'utente potrebbe essere malintenzionato.
 \section{Traccia dei contenuti}
 La relazione è strutturata come segue:
 \begin{itemize}
-	\item[]\textbf{Capitolo 2 } strumenti utilizzati per lo sviluppo del progetto.\\(ide,servlet, java,rabbitMQ,Aspectj, thread)
-	\item[]\textbf{Capitolo 3 } Installazione Server/Servlet
-	\item[]\textbf{Capitolo 4 } Creazione client
-	\item[]\textbf{Capitolo 5 } Simulazione
-	\item[]\textbf{Capitolo 6 } Conclusione
+	\item[]\textbf{Capitolo 2 } in questo capitolo vengono spiegati tutti gli strumenti utilizzati per lo sviluppo del progetto.
+	\item[]\textbf{Capitolo 3 } verranno affrontante in dettaglio l'implementazione del server.
+	\item[]\textbf{Capitolo 4 } sarà spiegato in dettaglio l'implementazione della classe Attaccante.
 \end{itemize}
 
 \chapter{Strumenti utilizzati}
@@ -79,7 +77,7 @@ Per lo sviluppo del server è stata utilizzata la tecnologia delle Servlet\cite{
 \section{Sviluppo LoginServlet}
 Nel momento in cui il server riceve una richiesta di tipo POST, esso invocherà il metodo \textit{doPost} [\ref{fig:dopost}]. 
 Tale metodo recupera l'username e la password ed assegna un cookie al client che ha inviato la richiesta. Successivamente inserisce il client all'interno di una struttura dati che gestisce il controllo d'accesso al sistema.\\
-Una funzione principale per il corretto funzionamento del server è \textit{unBan}[\ref{fig:unban}]. Tale metodo controlla se il client, identificato attraverso il suo cookie, è bannato. In caso affermativo si controlla se è il momento di rimuovere il ban, questo controllo viene effettuato sul numero di tentativi e sulla differenza di tempo trascorsa tra il momento del ban e il momento corrente.
+Una funzione principale per il corretto funzionamento del server è \textit{unBan}[\ref{fig:unban}]. Tale metodo controlla se il client, identificato attraverso il suo cookie, è stato bannato. In caso affermativo si controlla se è il momento di rimuovere il ban, questo controllo viene effettuato sul numero di tentativi e sulla differenza di tempo trascorsa tra il momento del ban e il momento corrente.
 Come si può notare dalla [\ref{fig:unban}], all'interno del server vi è un sistema di ban incrementale direttamente  proporzionale al numero di tentativi effettuati. Il metodo unBan può ritornare tre valori:
 \begin{itemize}
 	\item[-] Valore 1: Indica che il client ha aspettato il tempo necessario e potrà essere sbloccato.
@@ -92,11 +90,11 @@ Come si può notare dalla [\ref{fig:unban}], all'interno del server vi è un sis
 	\caption{Funzione unban}
 	\label{fig:unban}
 \end{figure}
-In base al valore restituito dalla funzione \textit{unBan}, il server restituisce al client tre tipologie di stato differenti. Nello specifico:
+In base al valore restituito dalla funzione \textit{unBan}, il server restituisce al client tre tipologie di stato HTTP differenti. Nello specifico:
 \begin{itemize}
-	\item[-] Status 270: Tale valore indica al client che è momentaneamente bloccato.
-	\item[-] Status 271: Tale valore indica al client che ha ancora dei tentativi a disposizione.
-	\item[-] Status 200: In caso di corretto login, il server restituirà al client tale valore.
+	\item[-] Stato 270: Tale valore indica al client che è momentaneamente bloccato.
+	\item[-] Stato 271: Esso indica al client che ha ancora dei tentativi a disposizione.
+	\item[-] Stato 200: In caso di corretto login, il server restituirà al client tale valore.
 \end{itemize}
 \begin{figure}[H]
 	\centering
@@ -104,9 +102,27 @@ In base al valore restituito dalla funzione \textit{unBan}, il server restituisc
 	\caption{Funzione doPost}
 	\label{fig:dopost}
 \end{figure}
+\section{Aspect LogServer}
+Nella figura sottostante, è implementato un pointcut che verrà eseguito nel momento in cui viene lanciato il metodo addUserACL. Tale pointcut stamperà l'ID (cookie) dell'utente che ha provato a connettersi.
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.5]{logserver.png}
+	\caption{Aspect logserver}
+	\label{fig:logserver}
+\end{figure}
+
+\newpage
+Nella figura [\ref{fig:jconsoleserver}] si può notare l'effetto del pointcut sopracitato, sulla console di Eclipse.
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.6]{jconsoleserver.png}
+	\caption{Output pointcut server}
+	\label{fig:jconsoleserver}
+\end{figure}
+
 
 \chapter{Implementazione classe Attacker}
-In questo capitolo viene spiega l'implementazione della classe Attacker, che si occuperà di trovare la password per violare il sistema. Le funzioni principali utilizzate all'interno della classe sono: \textit{run}, \textit{sendMessage}, \textit{receivedMessage}. \textbf{COSTRUTTORE PIÙ RABBITMQ} 
+In questo capitolo viene spiega l'implementazione della classe Attacker, che si occuperà di trovare la password per violare il sistema. Le funzioni principali utilizzate all'interno della classe sono: \textit{run}, \textit{sendMessage}, \textit{receivedMessage}.
 \section{Funzione run}
 Una volta invocata questa funzione, il client setta i parametri fondamentali per poter attaccare il sistema. Inizialmente, legge da un file il dizionario contenente tutte le password da provare. Successivamente, attraverso una richiesta GET al server, il client estrae le informazioni essenziali dal form che gli permetterà di costruire la richiesta POST in maniera corretta. Dopo di che verranno scelte le prime tre password con indice random che saranno inviate al server.
 \begin{figure}[H]
@@ -121,7 +137,7 @@ Nella figura \ref{fig:run1} vengono costruiti tutti i parametri che successivame
 	\centering \item []“user=prova\&pwd=prova”
 \end{itemize}
 \noindent
-Tale funzione restituirà, all'interno di un array(response), i valori dello status http che il server ha restituito per quella coppia username-password. Ogni risposta, all'interno dell'array response, verrà gestita con il costrutto “if annidato” che eseguiranno differenti istruzioni a seconda del valore della risposta.
+Tale funzione restituirà, all'interno di un array(response), i valori dello status http che il server ha restituito per quella coppia username-password. Ogni risposta, all'interno dell'array response, verrà gestita con il costrutto “if annidato” che eseguirà differenti istruzioni a seconda del valore della risposta.
 \begin{itemize}
 	\item Se il valore della response è pari a \textit{200}: l'attaccante ha trovato la password e comunicherà a tutti gli altri attaccanti tale informazione.
 	\item Se il valore della response è pari a \textit{271}: l'attaccante ha ancora a disposizione dei tentativi, invierà la password errata agli altri attaccanti per informarli di non utilizzarla.
@@ -137,19 +153,30 @@ La funzione descritta nella figura \ref{fig:sendMessage} permette di inviare la 
 	\label{fig:sendMessage}
 \end{figure}
 \section{Funzione receivedMessage}
-La funzione receivedMessage crea una classe anonima di tipo Consumer che effettuerà un Override del metodo \textit{handleDelivery}. Attraverso l'esecuzione della funzione\textit{channel.basicConsume} diremo al server RabbitMQ che la coda “queueName” dovrà essere utilizzata dal “consumer”.
-
---
-Ciò avviene grazie alla callback handleDelivery. Infatti, l'esecuzione del programma andrà avanti e non appena ci sarà un messaggio nella coda, il server Rabbit avviserà il client della presenza del nuovo messaggio. Una volta che il client consuma la coda esegue le istruzioni all'interno del metodo handleDelivery.
---
-
-
+La funzione receivedMessage crea una classe anonima di tipo Consumer che effettuerà un Override del metodo \textit{handleDelivery}. Attraverso l'esecuzione della funzione\textit{channel.basicConsume} diremo al server RabbitMQ che la coda “queueName” dovrà essere utilizzata da quel “consumer”. Ciò è dovuto grazie alla callback handleDelivery che permette l'esecuzione del programma e non appena un messaggio viene inserito nella coda, il server Rabbit avviserà il client della presenza del nuovo messaggio. Una volta che il client consuma la coda esegue le istruzioni all'interno del metodo handleDelivery.
 \begin{figure}[H]
 	\centering
 	\includegraphics[scale=0.4]{receivedMessage.png}
 	\caption{Funzione receivedMessage}
 	\label{fig:receivedMessage}
 \end{figure}
+\section{Pointcut LogAttacker}
+Nella figura sottostante, è implementato un pointcut che verrà eseguito nel momento in cui viene lanciato il metodo sendPost. Tale pointcut è diviso in due fasi differenti (before - after). Questo pointcut stamperà nella console: i parametri post che invierà al server e la risposta ricevuta da quest'ultimo.
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.4]{logattacker.png}
+	\caption{Pointcut logattacker}
+	\label{fig:logattacker}
+\end{figure}
+\newpage
+Nella figura sottostante si notare tutte le stampe eseguite dall'aspetto LogAttacker.
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.4]{jconsoleclient.png}
+	\caption{Pointcut print console}
+	\label{fig:jconsoleclient}
+\end{figure}
+
 
 
 

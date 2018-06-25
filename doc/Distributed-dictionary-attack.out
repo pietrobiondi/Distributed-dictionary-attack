@@ -6,7 +6,9 @@
 \BOOKMARK [0][-]{chapter.2}{Strumenti utilizzati}{}% 6
 \BOOKMARK [0][-]{chapter.3}{Sviluppo del server}{}% 7
 \BOOKMARK [1][-]{section.3.1}{Sviluppo LoginServlet}{chapter.3}% 8
-\BOOKMARK [0][-]{chapter.4}{Implementazione classe Attacker}{}% 9
-\BOOKMARK [1][-]{section.4.1}{Funzione run}{chapter.4}% 10
-\BOOKMARK [1][-]{section.4.2}{Funzione sendMessage}{chapter.4}% 11
-\BOOKMARK [1][-]{section.4.3}{Funzione receivedMessage}{chapter.4}% 12
+\BOOKMARK [1][-]{section.3.2}{Aspect LogServer}{chapter.3}% 9
+\BOOKMARK [0][-]{chapter.4}{Implementazione classe Attacker}{}% 10
+\BOOKMARK [1][-]{section.4.1}{Funzione run}{chapter.4}% 11
+\BOOKMARK [1][-]{section.4.2}{Funzione sendMessage}{chapter.4}% 12
+\BOOKMARK [1][-]{section.4.3}{Funzione receivedMessage}{chapter.4}% 13
+\BOOKMARK [1][-]{section.4.4}{Pointcut LogAttacker}{chapter.4}% 14
