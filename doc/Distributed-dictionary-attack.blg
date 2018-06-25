@@ -1,0 +1,46 @@
+This is BibTeX, Version 0.99d (TeX Live 2015/Debian)
+Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
+The top-level auxiliary file: Distributed-dictionary-attack.aux
+The style file: splncs.bst
+Database file #1: biblio.bib
+You've used 4 entries,
+            2043 wiz_defined-function locations,
+            498 strings with 3955 characters,
+and the built_in function-call counts, 550 in all, are:
+= -- 48
+> -- 16
+< -- 0
++ -- 8
+- -- 4
+* -- 18
+:= -- 95
+add.period$ -- 4
+call.type$ -- 4
+change.case$ -- 4
+chr.to.int$ -- 0
+cite$ -- 4
+duplicate$ -- 24
+empty$ -- 69
+format.name$ -- 4
+if$ -- 125
+int.to.chr$ -- 0
+int.to.str$ -- 4
+missing$ -- 0
+newline$ -- 23
+num.names$ -- 4
+pop$ -- 20
+preamble$ -- 1
+purify$ -- 0
+quote$ -- 0
+skip$ -- 16
+stack$ -- 0
+substring$ -- 0
+swap$ -- 4
+text.length$ -- 0
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 0
+warning$ -- 0
+while$ -- 4
+width$ -- 5
+write$ -- 42
