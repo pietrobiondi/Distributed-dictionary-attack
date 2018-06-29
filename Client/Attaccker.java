@@ -66,7 +66,6 @@ public class Attaccker extends Thread {
 		this.ban = false;
 
 		this.exName = exName;
-		// this.message = message;
 		this.name = name;
 
 		factory = new ConnectionFactory();
@@ -80,12 +79,6 @@ public class Attaccker extends Thread {
 
 	}
 
-	/*public void start() {
-		if (t == null) {
-			t = new Thread(this);
-			t.start();
-		}
-	}*/
 
 	public void run() {
 
@@ -102,7 +95,6 @@ public class Attaccker extends Thread {
 		try {
 			data = readDictonaryAttack(dictonary);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -251,8 +243,6 @@ public class Attaccker extends Thread {
 		wr.close();
 
 		int responseCode = conn.getResponseCode();
-		//System.out.println(name + ": Post parameters : " + postParams);
-		//System.out.println(name + ": receive the following Response Code : " + responseCode + "\n");
 
 		BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
 		String inputLine;
@@ -346,8 +336,6 @@ public class Attaccker extends Thread {
 
 	public void receivedMessage() throws IOException, TimeoutException {
 
-		//System.out.println(name + " Waiting for messages. To exit press CTRL+C");
-
 		Consumer consumer = new DefaultConsumer(channel) {
 			@Override
 			public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties,
@@ -360,7 +348,6 @@ public class Attaccker extends Thread {
 					if (!(sender.equalsIgnoreCase(getNameAttack()))) {
 						passwordRecieved.add(mexReceived);
 						System.out.println(getNameAttack() + " HA RICEVUTO DA " + sender + ": " + mexReceived + "\n");
-						//System.out.println(getNameAttack() + " HA IL SEGUENTE passwordRecieved " + passwordRecieved.toString() + "\n");
 					}
 				} else {
 					setPasswFound(true);
