@@ -1,9 +1,8 @@
 # Distributed-dictionary-attack
-Distributed-dictionary-attack
-Distributed-dictionary-attack
-Distributed System project.
+Distributed System UNICT project.
+Distributed-dictionary-attack is a Java program that implements a vulnerable server with an incremental ban system. Within the project there are clients which communicate through the RabbitMQ middleware. The messages exchanged between clients are the wrong passwords.
 
-ToDoList
-Il Design Pattern DTO, verrà utilizzato per far scambiare le informazioni tra i nodi [{DTO}](https://github.com/iluwatar/java-design-patterns/tree/master/data-transfer-object)
-Il Design Pattern Server State Sessions verrà usato sul lato server, creato in java [{Server State Sessions}](https://www.journaldev.com/1907/java-session-management-servlet-httpsession-url-rewriting)
-Il server dovrà avere un login e una password che si proteggerà dai tentativi di bruteforce impedendo ai nodi di provare a fare il login con un tempo sempre maggiore
+### What do you need
+-[{Apache Tomcat server}](https://www.journaldev.com/1854/java-web-application-tutorial-for-beginners)
+-[{RabbitMQ}](https://www.rabbitmq.com/download.html)
+-[{AspectJ}](http://www.eclipse.org/aspectj/downloads.php)
